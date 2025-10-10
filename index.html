@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Study Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;font-family:'Inter',sans-serif;margin:0;padding:0}
+body{background:#f5f7fa;color:#222;display:flex;flex-direction:column;min-height:100vh}
+header{background:#3a6ea5;color:#fff;padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between}
+header .logo{font-size:1.8rem;font-weight:700}
+main{flex:1;display:grid;grid-template-columns:1.2fr 2fr 1.2fr;gap:1rem;padding:1rem}
+.card{background:#fff;border-radius:10px;box-shadow:0 3px 6px rgba(0,0,0,.1);padding:1rem;overflow:auto}
+h2{margin-bottom:.5rem;color:#3a6ea5}
+form input,form select,form textarea{width:100%;padding:.5rem;border:1px solid #ccc;border-radius:6px;margin:.3rem 0}
+button{cursor:pointer;border:none;padding:.6rem 1rem;border-radius:6px;font-weight:600}
+.btn.primary{background:#3a6ea5;color:#fff}
+.btn.ghost{background:#eee}
+.btn.success{background:#4caf50;color:#fff}
+.task-list{list-style:none;margin-top:.5rem}
+.task-item{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #eee;padding:.4rem 0}
+.task-title{font-weight:600;cursor:pointer}
+.task-sub{font-size:.85rem;color:#666}
+.tick{width:20px;height:20px;border:1px solid #999;border-radius:50%;text-align:center;line-height:18px;margin-right:.5rem;cursor:pointer}
+.tick.checked{background:#4caf50;color:#fff;border-color:#4caf50}
+.stat-num{font-size:1.3rem;font-weight:700}
+.stats{display:flex;justify-content:space-between;margin-top:1rem}
+.progressWrap{margin-top:.5rem}
+.progressBar{width:100%;background:#eee;border-radius:6px;height:10px;overflow:hidden}
+#progressFill{height:10px;background:#3a6ea5;width:0%;transition:width .3s}
+.timer-panel{text-align:center}
+.timer-clock{font-size:2.5rem;font-weight:700;margin:.5rem 0;color:#3a6ea5}
+.time-inputs{display:flex;justify-content:center;gap:.5rem;margin-bottom:.5rem}
+.time-inputs input{width:70px;text-align:center;font-weight:600}
+.session-log{max-height:150px;overflow-y:auto;font-size:.9rem;margin-top:.5rem;color:#444}
+.modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center}
+.modal.show{display:flex}
+.modal-card{background:#fff;padding:1rem;border-radius:8px;min-width:300px}
+.small.muted{color:#777;font-size:.85rem}
+.footer{text-align:center;padding:.7rem;background:#3a6ea5;color:#fff;font-size:.9rem}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Smart Study Planner</div>
+</header>
+<main>
+  <aside class="card">
+    <h2>Add Task</h2>
+    <form id="taskForm">
+      <input id="taskTitle" placeholder="Task title" required>
+      <select id="taskCategory">
+        <option value="General">General</option>
+        <option value="Lectures">Lectures</option>
+        <option value="Coding">Coding</option>
+        <option value="Revision">Revision</option>
+        <option value="Assignment">Assignment</option>
+      </select>
+      <select id="taskPriority">
+        <option value="Low">Low</option>
+        <option value="Medium" selected>Medium</option>
+        <option value="High">High</option>
+      </select>
+      <input id="taskDue" type="date">
+      <textarea id="taskNotes" placeholder="Notes (optional)"></textarea>
+      <button type="submit" class="btn primary" style="width:100%">Add Task</button>
+    </form>
+    <div class="stats">
+      <div><div class="stat-num" id="totalTasks">0</div><div class="small muted">Total</div></div>
+      <div><div class="stat-num" id="completedTasks">0</div><div class="small muted">Done</div></div>
+      <div><div class="stat-num" id="progressPercent">0%</div><div class="small muted">Progress</div></div>
+    </div>
+    <div class="progressWrap"><div class="progressBar"><div id="progressFill"></div></div></div>
+  </aside>
+
+  <section class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h2>Your Tasks</h2>
+      <button id="clearCompleted" class="btn ghost">Clear Done</button>
+    </div>
+    <ul id="taskList" class="task-list"></ul>
+  </section>
+
+  <aside class="card">
+    <h2>Focus Timer</h2>
+    <div class="timer-panel">
+      <div class="timer-title" id="timerTaskTitle">No task selected</div>
+      <div class="timer-clock" id="timerClock">00:00:00</div>
+      <div class="time-inputs">
+        <input id="customHours" type="number" min="0" placeholder="Hours">
+        <input id="customMinutes" type="number" min="0" placeholder="Minutes">
+      </div>
+      <select id="timerTaskSelect"><option value="">Select task</option></select>
+      <div style="margin-top:.5rem">
+        <button id="startTimer" class="btn primary">Start</button>
+        <button id="pauseTimer" class="btn ghost">Pause</button>
+        <button id="resetTimer" class="btn ghost">Reset</button>
+      </div>
+    </div>
+    <h3 style="margin-top:1rem">Session Log</h3>
+    <ul id="sessionLog" class="session-log"></ul>
+  </aside>
+</main>
+
+<footer class="footer">© Smart Study Planner</footer>
+
+<div id="modal" class="modal">
+  <div class="modal-card">
+    <h3>Edit Task</h3>
+    <input id="editTitle">
+    <select id="editCategory"></select>
+    <select id="editPriority"></select>
+    <textarea id="editNotes"></textarea>
+    <div style="margin-top:.5rem;display:flex;justify-content:space-between">
+      <button id="saveEdit" class="btn primary">Save</button>
+      <button id="cancelEdit" class="btn ghost">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function nid(){return"t"+Math.random().toString(36).slice(2,9)}
+const KEY="smart_study_planner_v1"
+let tasks=JSON.parse(localStorage.getItem(KEY)||"[]")
+let selectedTimerTask=""
+let timerInterval=null
+let timerRemaining=0
+let timerRunning=false
+const el={
+taskForm:document.getElementById("taskForm"),taskTitle:document.getElementById("taskTitle"),taskCategory:document.getElementById("taskCategory"),taskPriority:document.getElementById("taskPriority"),taskDue:document.getElementById("taskDue"),taskNotes:document.getElementById("taskNotes"),taskList:document.getElementById("taskList"),totalTasks:document.getElementById("totalTasks"),completedTasks:document.getElementById("completedTasks"),progressPercent:document.getElementById("progressPercent"),progressFill:document.getElementById("progressFill"),clearCompleted:document.getElementById("clearCompleted"),timerTaskSelect:document.getElementById("timerTaskSelect"),timerTaskTitle:document.getElementById("timerTaskTitle"),timerClock:document.getElementById("timerClock"),startTimer:document.getElementById("startTimer"),pauseTimer:document.getElementById("pauseTimer"),resetTimer:document.getElementById("resetTimer"),sessionLog:document.getElementById("sessionLog"),modal:document.getElementById("modal"),editTitle:document.getElementById("editTitle"),editCategory:document.getElementById("editCategory"),editPriority:document.getElementById("editPriority"),editNotes:document.getElementById("editNotes"),saveEdit:document.getElementById("saveEdit"),cancelEdit:document.getElementById("cancelEdit")}
+function save(){localStorage.setItem(KEY,JSON.stringify(tasks))}
+function formatDate(d){if(!d)return"";return new Date(d).toLocaleDateString()}
+function buildNode(t){const li=document.createElement("li");li.className="task-item";const left=document.createElement("div");left.style.display="flex";left.style.alignItems="center";const tick=document.createElement("div");tick.className="tick";if(t.done)tick.classList.add("checked");tick.innerHTML=t.done?"✓":"";tick.addEventListener("click",()=>{t.done=!t.done;save();render()});left.appendChild(tick);const meta=document.createElement("div");meta.className="task-meta";const title=document.createElement("div");title.className="task-title";title.textContent=t.title;title.addEventListener("click",()=>openEdit(t.id));const sub=document.createElement("div");sub.className="task-sub";sub.textContent=`${t.category} • ${t.priority}${t.due?" • Due "+formatDate(t.due):""}`;meta.appendChild(title);meta.appendChild(sub);left.appendChild(meta);const right=document.createElement("div");const btnFocus=document.createElement("button");btnFocus.className="btn";btnFocus.textContent="Select";btnFocus.addEventListener("click",()=>{selectedTimerTask=t.id;syncTimerSelect()});const btnDel=document.createElement("button");btnDel.className="btn";btnDel.textContent="Delete";btnDel.addEventListener("click",()=>{if(!confirm("Delete task?"))return;tasks=tasks.filter(x=>x.id!==t.id);save();render()});right.appendChild(btnFocus);right.appendChild(btnDel);li.appendChild(left);li.appendChild(right);return li}
+function render(){el.taskList.innerHTML="";tasks.forEach(t=>el.taskList.appendChild(buildNode(t)));const total=tasks.length;const done=tasks.filter(t=>t.done).length;const percent=total?Math.round(done/total*100):0;el.totalTasks.textContent=total;el.completedTasks.textContent=done;el.progressPercent.textContent=percent+"%";el.progressFill.style.width=percent+"%";syncTimerSelect()}
+function syncTimerSelect(){const sel=el.timerTaskSelect;sel.innerHTML='<option value="">Select task</option>';tasks.forEach(t=>{const o=document.createElement("option");o.value=t.id;o.textContent=t.title+(t.done?" (done)":"");sel.appendChild(o)});if(selectedTimerTask){sel.value=selectedTimerTask;const t=tasks.find(x=>x.id===selectedTimerTask);el.timerTaskTitle.textContent=t?t.title:"No task selected"}else{el.timerTaskTitle.textContent="No task selected"}}
+el.taskForm.addEventListener("submit",e=>{e.preventDefault();const title=el.taskTitle.value.trim();if(!title)return;const t={id:nid(),title,category:el.taskCategory.value,priority:el.taskPriority.value,due:el.taskDue.value,notes:el.taskNotes.value.trim(),done:false,created:Date.now()};tasks.unshift(t);save();el.taskForm.reset();render()})
+el.clearCompleted.addEventListener("click",()=>{if(!confirm("Clear completed?"))return;tasks=tasks.filter(t=>!t.done);save();render()})
+function fmt(s){const h=Math.floor(s/3600).toString().padStart(2,"0");const m=Math.floor((s%3600)/60).toString().padStart(2,"0");const sec=(s%60).toString().padStart(2,"0");return h+":"+m+":"+sec}
+function createLogItem(taskId){const li=document.createElement("li");const t=tasks.find(x=>x.id===taskId);li.textContent=(t?t.title:"Task")+" — "+new Date().toLocaleTimeString();return li}
+function startCustomTimer(hours,minutes){timerRemaining=(parseInt(hours)||0)*3600+(parseInt(minutes)||0)*60;if(timerRemaining<=0)return alert("Enter valid time");timerRunning=true;if(timerInterval)clearInterval(timerInterval);el.timerClock.textContent=fmt(timerRemaining);timerInterval=setInterval(()=>{if(timerRemaining<=0){clearInterval(timerInterval);timerInterval=null;timerRunning=false;alert("Timer finished!");if(selectedTimerTask){const t=tasks.find(x=>x.id===selectedTimerTask);if(t){t.notes=(t.notes||"")+"\\n[Focus done "+new Date().toLocaleString()+"]";save();render()}el.sessionLog.prepend(createLogItem(selectedTimerTask))}return}timerRemaining--;el.timerClock.textContent=fmt(timerRemaining)},1000)}
+el.startTimer.addEventListener("click",()=>{if(timerRunning)return;const h=document.getElementById("customHours").value;const m=document.getElementById("customMinutes").value;startCustomTimer(h,m)})
+el.pauseTimer.addEventListener("click",()=>{if(timerInterval){clearInterval(timerInterval);timerInterval=null;timerRunning=false}})
+el.resetTimer.addEventListener("click",()=>{if(timerInterval){clearInterval(timerInterval);timerInterval=null}timerRemaining=0;timerRunning=false;el.timerClock.textContent="00:00:00"})
+function openEdit(id){const t=tasks.find(x=>x.id===id);if(!t)return;el.modal.classList.add("show");el.editTitle.value=t.title;el.editNotes.value=t.notes;el.editCategory.innerHTML=el.taskCategory.innerHTML;el.editPriority.innerHTML=el.taskPriority.innerHTML;el.editCategory.value=t.category;el.editPriority.value=t.priority;el.saveEdit.onclick=()=>{t.title=el.editTitle.value.trim()||t.title;t.notes=el.editNotes.value;t.category=el.editCategory.value;t.priority=el.editPriority.value;save();el.modal.classList.remove("show");render()};el.cancelEdit.onclick=()=>el.modal.classList.remove("show")}
+render()
+</script>
+</body>
+</html>
